@@ -71,7 +71,7 @@ def make_blank(points):
     maxy += 1
     grid = ['.']*maxy
     for i in range(maxy):
-        grid[i] = ['.']*maxx
+        grid[i] = [' ']*maxx
     return grid
 
 def main(fd):
