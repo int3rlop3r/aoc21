@@ -4,6 +4,7 @@ from queue import Queue
 
 # def get_val(grid, coord):
 get_val = lambda grid, coord: grid[coord[0]][coord[1]]
+neigh_sort = lambda x: x[1]
 
 def iter_grid(grid):
     for r, row in enumerate(grid):
@@ -11,42 +12,31 @@ def iter_grid(grid):
             yield r, c, elem
 
 def get_risk_cnt(fd): 
+    print("bad implementation, takes a while to run")
     grid = make_grid(fd)
-    # print_grid(grid)
     start = (0, 0)
     table = {start: {'prev': (), 'cost': 0, 'currval': 1}}
     endcoord = (len(grid)-1, len(grid[0])-1)
     count = 0
-    for r, c, elem in iter_grid(grid):
-        curr = (r, c)
-        # if curr == start:
-            # # skip start
-            # continue
-        neighs = get_neighbors(grid, curr) # get_neighbors_reverse
-        print(curr, neighs)
-        # curr_cost = table[curr]['cost']
-        if len(neighs) == 0: # will never happen now
-            continue
-
-        # ncoor = selected[0] # coors are in '0'
+    q = Queue()
+    q.put(start)
+    while not q.empty():
+        coord = q.get()
+        neighs = sorted(get_neighbors(grid, coord), key=neigh_sort)
+        # print(neighs)
+        currcost = table[coord]['cost']
         for ncoor, nval in neighs:
-            if curr not in table:
-                table[curr] = {
-                    'cost': nval+elem,
-                    'prev': ncoor,
-                    'currval': elem,
+            new_cost = currcost + nval
+            if ncoor in table and table[ncoor]['cost'] < new_cost:
+                continue
+            table[ncoor] = {
+                    'prev': coord,
+                    'cost': new_cost,
+                    'currval': nval,
                 }
-            # ncost = table[ncoor]['cost']
-            newcost = table[curr]['cost']+elem
-            if table[curr]['cost'] > newcost:
-                table[curr] = {
-                    'cost': newcost,
-                    'prev': ncoor,
-                    'currval': elem,
-                }
-    # return table[endcoord]['cost']
-    from pprint import pprint
-    pprint(table)
+            q.put(ncoor)
+        q.task_done()
+    return table[endcoord]
 
 def set_cost(curr, elem, ncoor, table):
     # ncoor = neigh # selected[0] # coors are in '0'
@@ -127,3 +117,35 @@ if __name__ == '__main__':
     else:
         with open(fpath) as f:
             main(f)
+"""
+    for r, c, elem in iter_grid(grid):
+        curr = (r, c)
+        # if curr == start:
+            # # skip start
+            # continue
+        neighs = get_neighbors(grid, curr) # get_neighbors_reverse
+        print(curr, neighs)
+        # curr_cost = table[curr]['cost']
+        if len(neighs) == 0: # will never happen now
+            continue
+
+        # ncoor = selected[0] # coors are in '0'
+        for ncoor, nval in neighs:
+            if curr not in table:
+                table[curr] = {
+                    'cost': nval+elem,
+                    'prev': ncoor,
+                    'currval': elem,
+                }
+            # ncost = table[ncoor]['cost']
+            newcost = table[curr]['cost']+elem
+            if table[curr]['cost'] > newcost:
+                table[curr] = {
+                    'cost': newcost,
+                    'prev': ncoor,
+                    'currval': elem,
+                }
+    # return table[endcoord]['cost']
+    from pprint import pprint
+    pprint(table)
+"""
