@@ -9,76 +9,78 @@ def get_risk_cnt(fd):
     grid = make_grid(fd)
     # print_grid(grid)
     q = Queue()
-    q.put((0, 0))
-    total_risk = 0
+    startcoord = (0, 0)
     endcoord = (len(grid)-1, len(grid[0])-1)
-    print(endcoord)
+    # cost = get_val(grid, startcoord)
+    cost = 0 # starting position is never entered so risk isn't calculated
+
+    q.put((startcoord, (), cost))
+    # print(endcoord)
+    table = {} # { (0, 0): {"prev": (), "cost:" get_val((0, 0))} }
     while not q.empty():
-        coord = q.get()
-        val = get_val(grid, coord)
+        coord, prev, cost = q.get()
+        print("popping", coord)
+        if coord not in table:
+            table[coord] = {'cost': cost, 'prev': prev}
+
+        if table[coord]['cost'] > cost:
+            table[coord] = {'cost': cost, 'prev': prev}
+
+        # val = get_val(grid, coord)
         # print(total_risk, "+", val, '=', total_risk+val)
-        total_risk += val
+        # total_risk += val
+        # if coord == endcoord:
+            # print("found the end!")
+            # q.task_done()
+            # break
 
-        if coord == endcoord:
-            print("found the end!")
-            q.task_done()
-            break
+        neighs = get_neighbors(grid, coord)
+        for ncoor, ncost in sorted((n for n in neighs if n), key=lambda x: x[1]):
+            print("putting ncoor", ncoor)
+            if ncoor not in table:
+                q.put((ncoor, coord, ncost+cost)) # neighbor coordinates
+            elif ncost+cost < table[ncoor].get('cost', 0):
+                q.put((ncoor, coord, ncost+cost)) # neighbor coordinates
 
-        right_cost, right = get_right_cost(grid, coord)
-        down_cost, down = get_down_cost(grid, coord)
-        # print(right_cost, down_cost)
-        if right_cost < down_cost:
-            nextco = right
-            print("go right")
-        else:
-            print("go down")
-            nextco = down
-        print("putting", nextco)
-        q.put(nextco)
+        # print(sns)
+        # m = min(neighs, key=lambda x: x[1])
+        # print(neighs)
+        # print(m)
+        # for n in neighs:
+
+        # q.put(nextco)
         q.task_done()
         # for n in nodes:
-    return total_risk
-
-def get_right_cost(grid, coords):
-    c = (
-            (coords[0], coords[1]+1),
-            (coords[0], coords[1]+2),
-            (coords[0]+1, coords[1]+1),
-            (coords[0]+1, coords[1]+2),
-        )
-    return get_cost(grid, c), (coords[0], coords[1]+1)
-    # return 1, (coords[0], coords[1]+1)
-
-def get_down_cost(grid, coords):
-    c = (
-            (coords[0]+1, coords[1]),
-            (coords[0]+2, coords[1]),
-            (coords[0]+1, coords[1]+1),
-            (coords[0]+2, coords[1]+1),
-        )
-    # return get_cost(grid, coords), coords[0]+1, coords[1]
-    return get_cost(grid, c), (coords[0]+1, coords[1])
-
-def get_cost(grid, coords):
-    cost = 0
-    for c in coords:
-        data = get_coord(grid, c)
-        cost += data['val']
+    print(table)
     return cost
+
+def get_neighbors(grid, coord):
+    coords = (
+            (coord[0]+1, coord[1]), # move right
+            (coord[0], coord[1]+1), # move down
+        )
+    neighs = []
+    for newco in coords:
+        n = get_coord(grid, newco)
+        if n[1] is None: # 0 could be a valid cost!
+            continue
+        neighs.append(n)
+    return neighs # first right then down
 
 def get_coord(grid, coord):
     try:
-        x = {
-            'coord': (coord[0], coord[1]),
-            # could use 'get_val' here but who cares?
-            'val': grid[coord[0]][coord[1]],
-        }
+        # x = {
+            # 'coord': coord,
+            # # could use 'get_val' here but who cares?
+            # 'val': get_val(grid, coord),
+        # }
+        return coord, get_val(grid, coord)
     except IndexError:
-        x = {
-            'coord': (coord[0], coord[1]),
-            'val': 0,
-        }
-    return x
+        # x = {
+            # 'coord': coord,
+            # 'val': -1,
+        # }
+        return coord, None
 
 def make_grid(fd):
     grid = []
