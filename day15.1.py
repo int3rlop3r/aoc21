@@ -16,7 +16,7 @@ def get_risk_cnt(fd):
     while not q.empty():
         coord = q.get()
         val = get_val(grid, coord)
-        print(total_risk, "+", val, '=', total_risk+val)
+        # print(total_risk, "+", val, '=', total_risk+val)
         total_risk += val
 
         if coord == endcoord:
@@ -24,38 +24,47 @@ def get_risk_cnt(fd):
             q.task_done()
             break
 
-        nodes = get_neighbors(grid, coord)
-        # print(nodes)
-        scores = defaultdict(int)
-        for no in nodes:
-            scores[no['coord']] += no['val'] 
-            neighs = get_neighbors(grid, no['coord'])
-            for n in neighs:
-                scores[no['coord']] += n['val']
-        if scores[nodes[0]['coord']] == scores[nodes[1]['coord']]:
-            # print("equal", scores)
-            minval = min(nodes, key=lambda x: x['val'])
-            nextco = minval['coord']
+        right_cost, right = get_right_cost(grid, coord)
+        down_cost, down = get_down_cost(grid, coord)
+        # print(right_cost, down_cost)
+        if right_cost < down_cost:
+            nextco = right
+            print("go right")
         else:
-            nextco = min(scores, key=lambda x: scores[x])
-        print("next coord:", nextco)
+            print("go down")
+            nextco = down
+        print("putting", nextco)
         q.put(nextco)
         q.task_done()
         # for n in nodes:
     return total_risk
 
-def get_neighbors(grid, coord):
-    coords = (
-            (coord[0]+1, coord[1]),
-            (coord[0], coord[1]+1),
+def get_right_cost(grid, coords):
+    c = (
+            (coords[0], coords[1]+1),
+            (coords[0], coords[1]+2),
+            (coords[0]+1, coords[1]+1),
+            (coords[0]+1, coords[1]+2),
         )
-    neighs = []
-    for newco in coords:
-        n = get_coord(grid, newco)
-        if not n:
-            continue
-        neighs.append(n)
-    return neighs
+    return get_cost(grid, c), (coords[0], coords[1]+1)
+    # return 1, (coords[0], coords[1]+1)
+
+def get_down_cost(grid, coords):
+    c = (
+            (coords[0]+1, coords[1]),
+            (coords[0]+2, coords[1]),
+            (coords[0]+1, coords[1]+1),
+            (coords[0]+2, coords[1]+1),
+        )
+    # return get_cost(grid, coords), coords[0]+1, coords[1]
+    return get_cost(grid, c), (coords[0]+1, coords[1])
+
+def get_cost(grid, coords):
+    cost = 0
+    for c in coords:
+        data = get_coord(grid, c)
+        cost += data['val']
+    return cost
 
 def get_coord(grid, coord):
     try:
@@ -65,7 +74,10 @@ def get_coord(grid, coord):
             'val': grid[coord[0]][coord[1]],
         }
     except IndexError:
-        x = {}
+        x = {
+            'coord': (coord[0], coord[1]),
+            'val': 0,
+        }
     return x
 
 def make_grid(fd):
