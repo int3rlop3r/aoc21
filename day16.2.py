@@ -1,6 +1,7 @@
+import operator
 import sys
 from io import StringIO
-from functools import partial
+from functools import partial, reduce
 
 def test_lval():
     fd = StringIO("D2FE28")
@@ -177,18 +178,33 @@ def parse(bs):
                 return opkt, bits
     return root
 
-def sum_vers(root):
+opers = [
+    sum,
+    partial(reduce, operator.mul),
+    min,
+    max,
+    lambda x: x, # place holder
+    lambda x: 1 if x[0] > x[1] else 0,
+    lambda x: 1 if x[0] < x[1] else 0,
+    lambda x: 1 if x[0] == x[1] else 0,
+]
+
+def eval_pkt(root):
     if isinstance(root, LPacket):
-        return root.ver
-    ver = root.ver
+        return root.lval
+    vals = []
     for p in root.pkts:
-        ver += sum_vers(p)
-    return ver
+        vals.append(eval_pkt(p))
+    try:
+        return opers[root.tid](vals)
+    except IndexError:
+        print(root.tid)
+        raise
 
 def main(fd):
     bs = BitStream(fd)
     root = parse(bs)
-    print(sum_vers(root))
+    print(eval_pkt(root))
 
 if __name__ == '__main__':
     try:
